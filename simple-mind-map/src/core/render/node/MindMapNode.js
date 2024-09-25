@@ -94,8 +94,10 @@ class MindMapNode {
     this._closeExpandNode = null
     this._fillExpandNode = null
     this._userListGroup = null
+    // 连线 path 的数组，数组每一项是一个 path 标签
     this._lines = []
     this._generalizationList = []
+    // 展开收起按钮的隐藏占位元素
     this._unVisibleRectRegionNode = null
     this._isMouseenter = false
     // 尺寸信息
@@ -197,6 +199,21 @@ class MindMapNode {
   }
 
   //  创建节点的各个内容对象数据
+  /**
+   * 创建节点的各个内容对象数据
+   * 示例：
+   * 生成了图片数据 _imgData
+   * 生成了图标数据 _iconData
+   * 生成了文字数据 _textData
+   * 生成了超链接数据 _hyperlinkData
+   * 生成了标签数据 _tagData
+   * 生成了备注数据 _noteData
+   * 生成了附件数据 _attachmentData
+   * 生成了编号数据 _numberData
+   * 生成了自定义前置内容数据 _prefixData
+   * 生成了自定义后置内容数据 _postfixData
+   * 无返回值
+   */
   createNodeData() {
     // 自定义节点内容
     let {
@@ -238,6 +255,11 @@ class MindMapNode {
   }
 
   //  计算节点的宽高
+  /**
+   * 计算节点的宽高
+   * 会给 width 和 height 赋值
+   * @returns { boolean } 返回是否尺寸发生变化
+   */
   getSize() {
     this.customLeft = this.getData('customLeft') || undefined
     this.customTop = this.getData('customTop') || undefined
@@ -253,6 +275,10 @@ class MindMapNode {
   }
 
   //  计算节点尺寸信息
+  /**
+   * 计算节点尺寸信息
+   * @returns {width: number, height: number} 返回节点的宽高
+   */
   getNodeRect() {
     // 自定义节点内容
     if (this.isUseCustomNodeContent()) {
@@ -376,6 +402,9 @@ class MindMapNode {
   }
 
   //  定位节点内容
+  /**
+   * 添加节点中的所有元素
+   */
   layout() {
     if (!this.group) return
     // 清除之前的内容
@@ -1052,6 +1081,10 @@ class MindMapNode {
   }
 
   //  获取节点形状
+  /**
+   * 获取节点形状
+   * @returns {string} 节点形状，字符串，CONSTANTS.SHAPE 中的一个
+   */
   getShape() {
     // 节点使用功能横线风格的话不支持设置形状，直接使用默认的矩形
     return this.mindMap.themeConfig.nodeUseLineStyle

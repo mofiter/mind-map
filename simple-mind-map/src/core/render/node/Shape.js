@@ -11,10 +11,14 @@ export default class Shape {
   //  形状需要的padding
   getShapePadding(width, height, paddingX, paddingY) {
     const shape = this.node.getShape()
+    // 默认padding
     const defaultPaddingX = 15
     const defaultPaddingY = 5
+    // 实际宽度
     const actWidth = width + paddingX * 2
+    // 实际高度
     const actHeight = height + paddingY * 2
+    // 实际偏移量
     const actOffset = Math.abs(actWidth - actHeight)
     switch (shape) {
       case CONSTANTS.SHAPE.ROUNDED_RECTANGLE:
@@ -61,6 +65,10 @@ export default class Shape {
   }
 
   //  创建形状节点
+  /**
+   * 创建形状节点
+   * @returns {Path|Polygon} 形状节点
+   */
   createShape() {
     const shape = this.node.getShape()
     let node = null
@@ -97,8 +105,11 @@ export default class Shape {
 
   // 获取节点减去节点边框宽度、hover节点边框宽度后的尺寸
   getNodeSize() {
+    // 节点边框宽度
     const borderWidth = this.node.getBorderWidth()
+    // 节点尺寸
     let { width, height } = this.node
+    // 减去节点边框宽度
     width -= borderWidth
     height -= borderWidth
     return {
@@ -108,6 +119,11 @@ export default class Shape {
   }
 
   // 创建路径节点
+  /**
+   * 创建路径节点
+   * @param {string} pathStr 路径字符串
+   * @returns {Path} 路径节点
+   */
   createPath(pathStr) {
     const { customCreateNodePath } = this.mindMap.opt
     if (customCreateNodePath) {
@@ -117,6 +133,11 @@ export default class Shape {
   }
 
   // 创建多边形节点
+  /**
+   * 创建多边形节点
+   * @param {Array} points 多边形点数组
+   * @returns {Polygon} 多边形节点
+   */
   createPolygon(points) {
     const { customCreateNodePolygon } = this.mindMap.opt
     if (customCreateNodePolygon) {

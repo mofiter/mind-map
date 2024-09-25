@@ -11,6 +11,11 @@ class LogicalStructure extends Base {
   }
 
   //  布局
+  /**
+   * 布局
+   * 主要利用深度遍历树的方式，计算每个节点的 left、top
+   * @param {*} callback 回调函数
+   */
   doLayout(callback) {
     let task = [
       () => {
@@ -36,7 +41,14 @@ class LogicalStructure extends Base {
       this.renderer.renderTree,
       null,
       (cur, parent, isRoot, layerIndex, index, ancestors) => {
-        let newNode = this.createNode(cur, parent, isRoot, layerIndex, index, ancestors)
+        let newNode = this.createNode(
+          cur,
+          parent,
+          isRoot,
+          layerIndex,
+          index,
+          ancestors
+        )
         newNode.sortIndex = sortIndex
         sortIndex++
         // 根节点定位在画布中心位置
@@ -298,6 +310,12 @@ class LogicalStructure extends Base {
   }
 
   //  渲染按钮
+  /**
+   * 渲染展开按钮
+   * 添加到 smm-node 的元素，默认在左上角，通过 translate 移动位置
+   * @param {*} node 节点
+   * @param {*} btn 展开按钮
+   */
   renderExpandBtn(node, btn) {
     let { width, height, expandBtnSize, layerIndex } = node
     if (layerIndex === 0) {

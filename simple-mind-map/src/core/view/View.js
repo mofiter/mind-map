@@ -1,40 +1,65 @@
 import { CONSTANTS } from '../../constants/constant'
 
-//  视图操作类
+// 视图操作类
+// 负责处理思维导图的缩放、平移等视图相关操作
 class View {
-  //  构造函数
+  // 构造函数
   constructor(opt = {}) {
     this.opt = opt
     this.mindMap = this.opt.mindMap
+    // 视图缩放比例
     this.scale = 1
+    // 视图拖拽起始位置
     this.sx = 0
     this.sy = 0
+    // 视图拖拽位置
     this.x = 0
     this.y = 0
+    // 是否是第一次拖拽
     this.firstDrag = true
+    // 设置视图变换数据
     this.setTransformData(this.mindMap.opt.viewData)
+    // 绑定事件
     this.bind()
   }
 
-  //  绑定
+  // 绑定事件
   bind() {
-    // 快捷键
+    // 绑定快捷键
+    this.bindKeyboardEvents()
+    // 绑定鼠标事件
+    this.bindMouseEvents()
+    // 绑定画布大小变化事件
+    this.bindResizeEvent()
+  }
+
+  // 绑定键盘快捷键
+  bindKeyboardEvents() {
+    // 放大快捷键
     this.mindMap.keyCommand.addShortcut('Control+=', () => {
       this.enlarge()
     })
+    // 缩小快捷键
     this.mindMap.keyCommand.addShortcut('Control+-', () => {
       this.narrow()
     })
+    // 恢复默认大小快捷键
     this.mindMap.keyCommand.addShortcut('Control+i', () => {
       this.fit()
     })
-    // 拖动视图
+  }
+
+  // 绑定鼠标事件
+  bindMouseEvents() {
+    // 鼠标按下事件
     this.mindMap.event.on('mousedown', e => {
       if (this.mindMap.opt.isDisableDrag) return
       e.preventDefault()
       this.sx = this.x
       this.sy = this.y
     })
+
+    // 鼠标拖动事件
     this.mindMap.event.on('drag', (e, event) => {
       // 按住ctrl键拖动为多选
       // 禁用拖拽
@@ -48,106 +73,118 @@ class View {
           this.mindMap.execCommand('CLEAR_ACTIVE_NODE')
         }
       }
+      // 计算拖拽后的视图位置
       this.x = this.sx + event.mousemoveOffset.x
       this.y = this.sy + event.mousemoveOffset.y
       this.transform()
     })
+
+    // 鼠标松开事件
     this.mindMap.event.on('mouseup', () => {
       this.firstDrag = true
     })
-    // 放大缩小视图
+
+    // 鼠标滚轮事件
     this.mindMap.event.on('mousewheel', (e, dirs, event, isTouchPad) => {
-      const {
-        customHandleMousewheel,
-        mousewheelAction,
-        mouseScaleCenterUseMousePosition,
-        mousewheelMoveStep,
-        mousewheelZoomActionReverse,
-        disableMouseWheelZoom
-      } = this.mindMap.opt
-      // 是否自定义鼠标滚轮事件
-      if (
-        customHandleMousewheel &&
-        typeof customHandleMousewheel === 'function'
-      ) {
-        return customHandleMousewheel(e)
-      }
-      // 1.鼠标滚轮事件控制缩放
-      if (
-        mousewheelAction === CONSTANTS.MOUSE_WHEEL_ACTION.ZOOM ||
-        e.ctrlKey ||
-        e.metaKey
-      ) {
-        if (disableMouseWheelZoom) return
-        const { x: clientX, y: clientY } = this.mindMap.toPos(
-          e.clientX,
-          e.clientY
-        )
-        const cx = mouseScaleCenterUseMousePosition ? clientX : undefined
-        const cy = mouseScaleCenterUseMousePosition ? clientY : undefined
-        // 如果来自触控板，那么过滤掉左右的移动
-        if (
-          isTouchPad &&
-          (dirs.includes(CONSTANTS.DIR.LEFT) ||
-            dirs.includes(CONSTANTS.DIR.RIGHT))
-        ) {
-          dirs = dirs.filter(dir => {
-            return ![CONSTANTS.DIR.LEFT, CONSTANTS.DIR.RIGHT].includes(dir)
-          })
-        }
-        switch (true) {
-          // 鼠标滚轮，向上和向左，都是缩小
-          case dirs.includes(CONSTANTS.DIR.UP || CONSTANTS.DIR.LEFT):
-            mousewheelZoomActionReverse
-              ? this.enlarge(cx, cy, isTouchPad)
-              : this.narrow(cx, cy, isTouchPad)
-            break
-          // 鼠标滚轮，向下和向右，都是放大
-          case dirs.includes(CONSTANTS.DIR.DOWN || CONSTANTS.DIR.RIGHT):
-            mousewheelZoomActionReverse
-              ? this.narrow(cx, cy, isTouchPad)
-              : this.enlarge(cx, cy, isTouchPad)
-            break
-        }
-      } else {
-        // 2.鼠标滚轮事件控制画布移动
-        let stepX = 0
-        let stepY = 0
-        if (isTouchPad) {
-          // 如果是触控板，那么直接使用触控板滑动距离
-          stepX = Math.abs(e.wheelDeltaX)
-          stepY = Math.abs(e.wheelDeltaY)
-        } else {
-          stepX = stepY = mousewheelMoveStep
-        }
-        let mx = 0
-        let my = 0
-        // 上移
-        if (dirs.includes(CONSTANTS.DIR.DOWN)) {
-          my = -stepY
-        }
-        // 下移
-        if (dirs.includes(CONSTANTS.DIR.UP)) {
-          my = stepY
-        }
-        // 右移
-        if (dirs.includes(CONSTANTS.DIR.LEFT)) {
-          mx = stepX
-        }
-        // 左移
-        if (dirs.includes(CONSTANTS.DIR.RIGHT)) {
-          mx = -stepX
-        }
-        this.translateXY(mx, my)
-      }
+      this.handleMouseWheel(e, dirs, event, isTouchPad)
     })
+  }
+
+  // 处理鼠标滚轮事件
+  handleMouseWheel(e, dirs, event, isTouchPad) {
+    const {
+      customHandleMousewheel,
+      mousewheelAction,
+      mouseScaleCenterUseMousePosition,
+      mousewheelMoveStep,
+      mousewheelZoomActionReverse,
+      disableMouseWheelZoom
+    } = this.mindMap.opt
+
+    // 是否自定义鼠标滚轮事件
+    if (customHandleMousewheel && typeof customHandleMousewheel === 'function') {
+      return customHandleMousewheel(e)
+    }
+
+    // 鼠标滚轮事件控制缩放
+    if (mousewheelAction === CONSTANTS.MOUSE_WHEEL_ACTION.ZOOM || e.ctrlKey || e.metaKey) {
+      if (disableMouseWheelZoom) return
+      const { x: clientX, y: clientY } = this.mindMap.toPos(e.clientX, e.clientY)
+      const cx = mouseScaleCenterUseMousePosition ? clientX : undefined
+      const cy = mouseScaleCenterUseMousePosition ? clientY : undefined
+
+      // 如果来自触控板，那么过滤掉左右的移动
+      if (isTouchPad) {
+        dirs = dirs.filter(dir => ![CONSTANTS.DIR.LEFT, CONSTANTS.DIR.RIGHT].includes(dir))
+      }
+
+      // 根据方向进行缩放
+      this.handleZoom(dirs, cx, cy, isTouchPad, mousewheelZoomActionReverse)
+    } else {
+      // 鼠标滚轮事件控制画布移动
+      this.handleCanvasMove(e, dirs, isTouchPad, mousewheelMoveStep)
+    }
+  }
+
+  // 处理缩放
+  handleZoom(dirs, cx, cy, isTouchPad, mousewheelZoomActionReverse) {
+    switch (true) {
+      // 鼠标滚轮，向上和向左，都是缩小
+      case dirs.includes(CONSTANTS.DIR.UP || CONSTANTS.DIR.LEFT):
+        mousewheelZoomActionReverse
+          ? this.enlarge(cx, cy, isTouchPad)
+          : this.narrow(cx, cy, isTouchPad)
+        break
+      // 鼠标滚轮，向下和向右，都是放大
+      case dirs.includes(CONSTANTS.DIR.DOWN || CONSTANTS.DIR.RIGHT):
+        mousewheelZoomActionReverse
+          ? this.narrow(cx, cy, isTouchPad)
+          : this.enlarge(cx, cy, isTouchPad)
+        break
+    }
+  }
+
+  // 处理画布移动
+  handleCanvasMove(e, dirs, isTouchPad, mousewheelMoveStep) {
+    let stepX = 0
+    let stepY = 0
+    if (isTouchPad) {
+      // 如果是触控板，那么直接使用触控板滑动距离
+      stepX = Math.abs(e.wheelDeltaX)
+      stepY = Math.abs(e.wheelDeltaY)
+    } else {
+      stepX = stepY = mousewheelMoveStep
+    }
+    let mx = 0
+    let my = 0
+    // 上移
+    if (dirs.includes(CONSTANTS.DIR.DOWN)) {
+      my = -stepY
+    }
+    // 下移
+    if (dirs.includes(CONSTANTS.DIR.UP)) {
+      my = stepY
+    }
+    // 右移
+    if (dirs.includes(CONSTANTS.DIR.LEFT)) {
+      mx = stepX
+    }
+    // 左移
+    if (dirs.includes(CONSTANTS.DIR.RIGHT)) {
+      mx = -stepX
+    }
+    this.translateXY(mx, my)
+  }
+
+  // 绑定画布大小变化事件
+  bindResizeEvent() {
     this.mindMap.on('resize', () => {
       if (!this.checkNeedMindMapInCanvas()) return
       this.transform()
     })
   }
 
-  //  获取当前变换状态数据
+  // 获取当前变换状态数据
   getTransformData() {
     return {
       transform: this.mindMap.draw.transform(),
@@ -161,7 +198,7 @@ class View {
     }
   }
 
-  //  动态设置变换状态数据
+  // 动态设置变换状态数据
   setTransformData(viewData) {
     if (viewData) {
       Object.keys(viewData.state).forEach(prop => {
@@ -176,7 +213,7 @@ class View {
     }
   }
 
-  //  平移x,y方向
+  // 平移x,y方向
   translateXY(x, y) {
     if (x === 0 && y === 0) return
     this.x += x
@@ -185,7 +222,7 @@ class View {
     this.emitEvent('translate')
   }
 
-  //  平移x方向
+  // 平移x方向
   translateX(step) {
     if (step === 0) return
     this.x += step
@@ -193,14 +230,14 @@ class View {
     this.emitEvent('translate')
   }
 
-  //  平移x方式到
+  // 平移x方向到指定位置
   translateXTo(x) {
     this.x = x
     this.transform()
     this.emitEvent('translate')
   }
 
-  //  平移y方向
+  // 平移y方向
   translateY(step) {
     if (step === 0) return
     this.y += step

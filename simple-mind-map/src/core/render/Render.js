@@ -713,6 +713,13 @@ class Render {
   }
 
   //  插入同级节点
+  /**
+   * 插入同级节点
+   * @param {*} openEdit 是否进入编辑模式
+   * @param {*} appointNodes 指定节点
+   * @param {*} appointData 指定节点数据
+   * @param {*} appointChildren 指定子节点数据
+   */
   insertNode(
     openEdit = true,
     appointNodes = [],
@@ -728,9 +735,13 @@ class Render {
       defaultInsertSecondLevelNodeText,
       defaultInsertBelowSecondLevelNodeText
     } = this.mindMap.opt
+    // 如果指定了节点，那么使用指定的节点，否则使用激活的节点
     const list = appointNodes.length > 0 ? appointNodes : this.activeNodeList
+    // 是否同时对多个节点插入同级节点
     const handleMultiNodes = list.length > 1
+    // 是否是富文本
     const isRichText = !!this.mindMap.richText
+    // 获取新节点的行为
     const { focusNewNode, inserting } = this.getNewNodeBehavior(
       openEdit,
       handleMultiNodes

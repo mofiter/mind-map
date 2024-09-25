@@ -117,6 +117,10 @@ class Style {
   }
 
   // 形状
+  /**
+   * 设置形状样式，包括渐变样式、填充颜色、边框颜色、边框宽度、边框虚线样式
+   * @param {SVG} node 形状节点
+   */
   shape(node) {
     const styles = {
       gradientStyle: this.merge('gradientStyle'),

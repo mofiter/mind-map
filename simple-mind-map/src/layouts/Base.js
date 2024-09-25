@@ -27,6 +27,9 @@ class Base {
   }
 
   //  连线
+  /**
+   * 主要用来生成线的 path 数据
+   */
   renderLine() {
     throw new Error('【renderLine】方法为必要方法，需要子类进行重写！')
   }
@@ -613,6 +616,13 @@ class Base {
   }
 
   // 设置连线样式
+  /**
+   * 设置连线样式
+   * @param {*} style 连线样式
+   * @param {*} line 连线元素
+   * @param {*} path 连线 path
+   * @param {*} childNode 子节点
+   */
   setLineStyle(style, line, path, childNode) {
     line.plot(this.transformPath(path))
     style && style(line, childNode, true)

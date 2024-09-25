@@ -10,6 +10,7 @@ import {
 const parseAddNodeList = list => {
   // 找出顶层节点
   list = getTopAncestorsFomNodeList(list)
+  // 缓存，key 为父节点 uid，value 为子节点列表
   const cache = {}
   const uidToParent = {}
   // 找出列表中节点在兄弟节点中的索引，并和父节点关联起来
@@ -24,6 +25,7 @@ const parseAddNodeList = list => {
         index
       }
       if (cache[pUid]) {
+        // 如果该父节点已存在于缓存中，且当前节点索引不存在，则添加
         if (
           !cache[pUid].find(item => {
             return item.index === data.index
@@ -32,6 +34,7 @@ const parseAddNodeList = list => {
           cache[pUid].push(data)
         }
       } else {
+        // 如果该父节点不存在于缓存中，则创建新数组
         cache[pUid] = [data]
       }
     }
@@ -42,6 +45,7 @@ const parseAddNodeList = list => {
     const parentNode = uidToParent[uid]
     if (indexList.length > 1) {
       // 多个节点
+      // 按照 index 从小到大排序
       const rangeList = indexList
         .map(item => {
           return item.index
@@ -49,9 +53,13 @@ const parseAddNodeList = list => {
         .sort((a, b) => {
           return a - b
         })
+      // 最小索引
       const minIndex = rangeList[0]
+      // 最大索引
       const maxIndex = rangeList[rangeList.length - 1]
+      // 当前开始索引
       let curStart = -1
+      // 当前结束索引
       let curEnd = -1
       for (let i = minIndex; i <= maxIndex; i++) {
         // 连续索引
@@ -101,6 +109,7 @@ const getNodeOuterFrameList = node => {
     if (!outerFrameData) return
     const groupId = outerFrameData.groupId
     if (groupId) {
+      // 如果有 groupId，将节点添加到对应的组
       if (!map[groupId]) {
         map[groupId] = []
       }
@@ -109,12 +118,14 @@ const getNodeOuterFrameList = node => {
         index
       })
     } else {
+      // 如果没有 groupId，直接添加到结果中
       res.push({
         nodeList: [item],
         range: [index, index]
       })
     }
   })
+  // 处理分组的节点
   Object.keys(map).forEach(id => {
     const list = map[id]
     res.push({
@@ -142,7 +153,9 @@ class OuterFrame {
     this.mindMap = opt.mindMap
     this.draw = null
     this.createDrawContainer()
+    // 外框元素列表
     this.outerFrameElList = []
+    // 当前激活的外框
     this.activeOuterFrame = null
     this.bindEvent()
   }
@@ -160,7 +173,7 @@ class OuterFrame {
     this.renderOuterFrames = this.renderOuterFrames.bind(this)
     this.mindMap.on('node_tree_render_end', this.renderOuterFrames)
     this.mindMap.on('data_change', this.renderOuterFrames)
-    // 监听画布和节点点击事件，用于清除当前激活的连接线
+    // 监听画布和节点点击事件，用于清除当前激活的外框
     this.clearActiveOuterFrame = this.clearActiveOuterFrame.bind(this)
     this.mindMap.on('draw_click', this.clearActiveOuterFrame)
     this.mindMap.on('node_click', this.clearActiveOuterFrame)
@@ -206,6 +219,7 @@ class OuterFrame {
       return
     }
     let nodeList = appointNodes.length > 0 ? appointNodes : activeNodeList
+    // 过滤掉根节点和概括节点
     nodeList = nodeList.filter(node => {
       return !node.isRoot && !node.isGeneralization
     })
@@ -304,6 +318,7 @@ class OuterFrame {
               !Number.isFinite(height)
             )
               return
+            // 创建外框元素
             const el = this.createOuterFrameEl(
               (left -
                 outerFramePaddingX -
@@ -319,6 +334,7 @@ class OuterFrame {
               (height + outerFramePaddingY * 2) / t.scaleY,
               nodeList[0].getData('outerFrame') // 使用第一个节点的外框样式
             )
+            // 添加点击事件
             el.on('click', e => {
               e.stopPropagation()
               this.setActiveOuterFrame(el, cur, range)
