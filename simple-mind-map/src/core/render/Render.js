@@ -97,6 +97,7 @@ class Render {
     this.beingPasteText = ''
     this.beingPasteImgSize = 0
     this.currentBeingPasteType = ''
+    this.pasteData = { text: null, img: null }
     // 节点高亮框
     this.highlightBoxNode = null
     this.highlightBoxNodeStyle = null
@@ -161,6 +162,15 @@ class Render {
         })
       })
     }
+    // 处理非https下的复制黏贴问题
+    // 暂时不启用，因为给页面的其他输入框（比如节点文本编辑框）粘贴内容也会触发，冲突问题暂时没有想到好的解决方法，不可能要求所有输入框都阻止冒泡
+    // if (!navigator.clipboard) {
+    //   this.handlePaste = this.handlePaste.bind(this)
+    //   window.addEventListener('paste', this.handlePaste)
+    //   this.mindMap.on('beforeDestroy', () => {
+    //     window.removeEventListener('paste', this.handlePaste)
+    //   })
+    // }
   }
 
   // 性能模式，懒加载节点
@@ -405,7 +415,7 @@ class Render {
     this.mindMap.keyCommand.addShortcut('Control+Down', () => {
       this.mindMap.execCommand('DOWN_NODE')
     })
-    // 复制节点、
+    // 复制节点
     this.mindMap.keyCommand.addShortcut('Control+c', () => {
       this.copy()
     })
@@ -415,7 +425,7 @@ class Render {
     })
     // 粘贴节点
     this.mindMap.keyCommand.addShortcut('Control+v', () => {
-      this.paste()
+      if (navigator.clipboard) this.paste()
     })
     // 根节点居中显示
     this.mindMap.keyCommand.addShortcut('Control+Enter', () => {
@@ -1129,6 +1139,28 @@ class Render {
     })
   }
 
+  // 非https下复制黏贴，获取内容方法
+  handlePaste(event) {
+    const { disabledClipboard } = this.mindMap.opt
+    if (disabledClipboard) return
+    const clipboardData =
+      event.clipboardData || event.originalEvent.clipboardData
+    const items = clipboardData.items
+    let img = null
+    let text = ''
+    Array.from(items).forEach(item => {
+      if (item.type.indexOf('image') > -1) {
+        img = item.getAsFile()
+      }
+      if (item.type.indexOf('text') > -1) {
+        text = clipboardData.getData('text')
+      }
+    })
+    this.pasteData.img = img
+    this.pasteData.text = text
+    this.paste()
+  }
+
   // 粘贴
   async paste() {
     const {
@@ -1142,7 +1174,9 @@ class Render {
     let img = null
     if (!disabledClipboard) {
       try {
-        const res = await getDataFromClipboard()
+        const res = navigator.clipboard
+          ? await getDataFromClipboard()
+          : this.pasteData
         text = res.text || ''
         img = res.img || null
       } catch (error) {
