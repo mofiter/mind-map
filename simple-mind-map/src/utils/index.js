@@ -852,19 +852,26 @@ export const checkHasSupSubRelation = list => {
 
 // 解析要添加概要的节点实例列表
 export const parseAddGeneralizationNodeList = list => {
+  // 用于存储父节点及其子节点信息的缓存
   const cache = {}
+  // 用于快速查找父节点的映射
   const uidToParent = {}
+  
+  // 遍历输入的节点列表
   list.forEach(node => {
     const parent = node.parent
     if (parent) {
       const pUid = parent.uid
+      // 记录父节点
       uidToParent[pUid] = parent
+      // 获取节点在兄弟节点中的索引
       const index = node.getIndexInBrothers()
       const data = {
         node,
         index
       }
       if (cache[pUid]) {
+        // 如果该父节点已存在于缓存中，且当前节点索引不存在，则添加
         if (
           !cache[pUid].find(item => {
             return item.index === data.index
@@ -873,13 +880,20 @@ export const parseAddGeneralizationNodeList = list => {
           cache[pUid].push(data)
         }
       } else {
+        // 如果该父节点不存在于缓存中，则创建新数组
         cache[pUid] = [data]
       }
     }
   })
+
+  // 用于存储最终结果的数组
   const res = []
+  
+  // 处理每个父节点的子节点
   Object.keys(cache).forEach(uid => {
     if (cache[uid].length > 1) {
+      // 如果有多个子节点
+      // 按照索引从小到大排序
       const rangeList = cache[uid]
         .map(item => {
           return item.index
@@ -887,16 +901,21 @@ export const parseAddGeneralizationNodeList = list => {
         .sort((a, b) => {
           return a - b
         })
+      // 保存父节点和其子节点的索引范围
       res.push({
         node: uidToParent[uid],
         range: [rangeList[0], rangeList[rangeList.length - 1]]
       })
     } else {
+      // 如果只有一个子节点
+      // 保存子节点
       res.push({
         node: cache[uid][0].node
       })
     }
   })
+  
+  // 返回解析后的结果
   return res
 }
 

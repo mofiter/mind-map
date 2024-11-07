@@ -42,9 +42,32 @@
 - 如果是收起状态，一般会显示子孙节点的数量，需要通过节点的 children 递归计算
 - 使用 renderer.layout.renderExpandBtn 方法渲染
 
+# src/core/render/node/nodeGeneralization.js
+- 概要的相关处理
+- 说明：概要是一个 node，class 为 smm-node 和 generalization_nodeId
+- renderGeneralization: 渲染概要节点
+  - updateGeneralizationData 更新节点概要数据
+  - createGeneralizationNode 创建概要节点，会修改 _generalizationList 数组，数组每一项是一个对象，对象包含 node、range、generalizationLine、generalizationNode。创建了 MindMapNode 实例，赋值给 generalizationNode。
+  - 使用 renderer.layout.renderGeneralization 方法渲染
+- 
+
 # src/plugins/OuterFrame.js
 - 外框插件
 - 说明：所有的外框有一个容器 group，class 为 smm-outer-frame-container，放在思维导图容器 smm-container 里，每个外框是一个矩形 Rect，放在容器 group 中
 - 外框的渲染：当思维导图树渲染完毕，或者数据变化时，会重新渲染外框，调用 renderOuterFrames 方法
 - 外框的创建：在外框渲染时，通过遍历节点，对于每个有外框的节点，都调用 createOuterFrameEl 方法创建外框，得到一个 rect，给这个 rect 添加一个点击事件，点击时，激活外框
-- 
+
+# src/core/render/Render.js
+- 渲染类
+- 说明：渲染类是思维导图的核心类，负责思维导图的渲染和更新
+- 构造函数
+  - 设置布局，根据 options 中的 layout 设置布局，默认使用 LogicalStructure 布局。每个布局是一个类，在 src/layouts 目录下。
+  - 绑定事件，绑定画布点击事件、右键事件、双击事件等
+  - 注册命令，注册全选、回退、前进、插入同级节点、插入多个同级节点、插入子节点、插入多个子节点、插入父节点、上移节点、下移节点、删除节点、剪切节点、粘贴节点、展开所有节点、收起所有节点、设置节点数据、添加概要、删除概要等命令
+  - 注册快捷键，如 Tab、Insert、Enter、Shift+Tab、Ctrl+g、/、Del、Backspace、Control+a、Control+l、Control+Up、Control+Down、Control+c、Control+x、Control+v 等。快捷键的触发是执行对应的命令，execCommand
+- 方法
+  - render: 渲染思维导图
+    - 计算布局，调用布局类的 doLayout 方法，计算每个节点的位置、大小等信息，然后调用 node.render 方法渲染节点
+  - addGeneralization: 添加节点概要
+    - 从选择的节点中，找出要添加概要的节点，然后添加概要数据，再重新渲染
+  - removeGeneralization: 删除节点概要
